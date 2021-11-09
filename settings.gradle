@@ -1,0 +1,3 @@
+rootProject.name = "ArcGIS Special Training"
+include ':route_and_display_route_features'
+include ':regionfeatureextraction'
