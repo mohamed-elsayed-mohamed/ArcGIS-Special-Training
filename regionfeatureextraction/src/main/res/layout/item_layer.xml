@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <import type="com.esri.arcgisruntime.layers.Layer"/>
+        <variable
+            name="layer"
+            type="Layer" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/tvLayerName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/switchOpenCloseLayer"
+            app:layout_constraintEnd_toStartOf="@+id/switchOpenCloseLayer"
+            app:layout_constraintStart_toStartOf="parent"
+            android:textColor="@color/black"
+            android:text="@{layer.name}"
+            app:layout_constraintTop_toTopOf="@+id/switchOpenCloseLayer" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchOpenCloseLayer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:checked="@={layer.visible}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
