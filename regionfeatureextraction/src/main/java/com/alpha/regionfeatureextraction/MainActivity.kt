@@ -26,7 +26,9 @@ import kotlin.math.roundToInt
 
 /**
  * 1- Extracting and display features from web map service.
+ *
  * 2- Show/Hide Layers
+ *
  * 3- Calculate Area of Polygon
  *
  * References:-
@@ -110,7 +112,7 @@ class MainActivity : AppCompatActivity() {
 
                 val screenPoint = Point(motionEvent.x.roundToInt(), motionEvent.y.roundToInt())
 
-                val identifyLayerResultFuture: ListenableFuture<List<IdentifyLayerResult>> = mapView.identifyLayersAsync(screenPoint, 0.0, false)
+                val identifyLayerResultFuture: ListenableFuture<List<IdentifyLayerResult>> = mapView.identifyLayersAsync(screenPoint, 0.0, false, 1)
                 identifyLayerResultFuture.addDoneListener {
                     try {
                         if(callout.isShowing) callout.dismiss()
@@ -147,7 +149,6 @@ class MainActivity : AppCompatActivity() {
         callout.location = envelope.center
         callout.content = calloutContent
         callout.show()
-
     }
 
     private fun getCalloutContent(): TextView{
@@ -168,10 +169,8 @@ class MainActivity : AppCompatActivity() {
         mapView.map = ArcGISMap(portalItem)
 
         mapView.map.addDoneLoadingListener {
-            if(mapView.map.loadStatus == LoadStatus.LOADED && mapView.map.operationalLayers.isNotEmpty()){
-//                mapView.map.operationalLayers.clear()
+            if(mapView.map.loadStatus == LoadStatus.LOADED && mapView.map.operationalLayers.isNotEmpty())
                 displayBottomSheet()
-            }
 
             mapView.graphicsOverlays.add(graphicsOverlay)
         }
