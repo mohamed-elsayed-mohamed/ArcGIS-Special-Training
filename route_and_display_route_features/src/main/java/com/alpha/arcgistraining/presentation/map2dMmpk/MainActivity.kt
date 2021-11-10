@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.alpha.arcgistraining.R
@@ -18,19 +19,19 @@ import com.esri.arcgisruntime.layers.ArcGISVectorTiledLayer
 import com.esri.arcgisruntime.loadable.LoadStatus
 import com.esri.arcgisruntime.mapping.ArcGISMap
 import com.esri.arcgisruntime.mapping.Basemap
+import com.esri.arcgisruntime.mapping.Viewpoint
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener
 import com.esri.arcgisruntime.mapping.view.Graphic
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay
 import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol
-import com.esri.arcgisruntime.tasks.networkanalysis.Route
-import com.esri.arcgisruntime.tasks.networkanalysis.RouteParameters
-import com.esri.arcgisruntime.tasks.networkanalysis.RouteTask
-import com.esri.arcgisruntime.tasks.networkanalysis.Stop
+import com.esri.arcgisruntime.tasks.networkanalysis.*
 import kotlin.math.roundToInt
 
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var directionManeuvers: MutableList<DirectionManeuver>
 
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
 
@@ -235,7 +236,9 @@ class MainActivity : AppCompatActivity() {
                     routeGraphic.attributes["routeName"] = route.routeName
                     routeGraphic.attributes["totalLength"] = route.totalLength.toInt()
 
+                    directionManeuvers = route.directionManeuvers
 
+                    getDirectionManeuversArray(directionManeuvers)
                 }
             }
 
@@ -244,6 +247,24 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
+    private fun getDirectionManeuversArray(directionManeuvers: List<DirectionManeuver>): ArrayList<String> {
+
+        val directionsArray = arrayListOf<String>()
+        var string = ""
+
+        binding.mapView.setViewpoint(Viewpoint(directionManeuvers.get(0).geometry.extent))
+
+        for (direction in directionManeuvers) {
+            directionsArray.add(direction.directionText)
+            string += direction.directionText + "\n"
+        }
+
+        Log.d(TAG,string)
+
+        return directionsArray
+    }
+
 
     private fun showCalloutsForRoute(routeGraphic: Graphic, tapLocation: Point) {
 
