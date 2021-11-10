@@ -1,9 +1,12 @@
 package com.alpha.arcgistraining.presentation.map2dMmpk
 
 import android.annotation.SuppressLint
+import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.TextView
@@ -52,6 +55,9 @@ class MainActivity : AppCompatActivity() {
 
     private var graphicRoutePoint = Graphic()
 
+    private lateinit var textToSpeech: TextToSpeech
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -61,6 +67,8 @@ class MainActivity : AppCompatActivity() {
         setupMap()
 
         setMapTouchListener()
+
+        initializeTextToSpeech()
 
     }
 
@@ -287,8 +295,32 @@ class MainActivity : AppCompatActivity() {
         binding.mapView.setViewpointGeometryAsync(directionManeuvers[i].geometry)
         graphicRoutePoint = Graphic(directionManeuvers[i].geometry, simpleMarkerSymbol)
         graphicsOverlay.graphics.add(graphicRoutePoint)
+
+        //speak when clicking
+        speak(directionManeuvers[i].directionText)
+
     }
 
+    //when clicking on item in list view speak the direction Text
+    private fun speak(directionText: String) {
+        if(this::textToSpeech.isInitialized) {
+            textToSpeech.speak(directionText, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+    }
+
+    //initializing text to speech
+    private fun initializeTextToSpeech() {
+        textToSpeech = TextToSpeech(this, TextToSpeech.OnInitListener {
+            if (it != TextToSpeech.ERROR) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    textToSpeech.language = Resources.getSystem().configuration.locales[0]
+                } else {
+                    textToSpeech.language = Resources.getSystem().configuration.locale
+                }
+            }
+        })
+    }
 
     private fun showCalloutsForRoute(routeGraphic: Graphic, tapLocation: Point) {
         //show the callouts containing details about route from graphic of route
