@@ -6,12 +6,14 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.alpha.arcgistraining.R
 import com.alpha.arcgistraining.databinding.ActivityMainBinding
 import com.alpha.arcgistraining.domain.constants.MapConstants
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
+import com.esri.arcgisruntime.geometry.Point
 import com.esri.arcgisruntime.layers.ArcGISVectorTiledLayer
 import com.esri.arcgisruntime.loadable.LoadStatus
 import com.esri.arcgisruntime.mapping.ArcGISMap
@@ -27,6 +29,7 @@ import com.esri.arcgisruntime.tasks.networkanalysis.RouteTask
 import com.esri.arcgisruntime.tasks.networkanalysis.Stop
 import kotlin.math.roundToInt
 
+
 class MainActivity : AppCompatActivity() {
 
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
@@ -34,6 +37,8 @@ class MainActivity : AppCompatActivity() {
     private val routeStops: ArrayList<Stop> = arrayListOf()
 
     private val graphicsOverlay: GraphicsOverlay = GraphicsOverlay()
+
+    private var routeGraphic = Graphic()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +92,12 @@ class MainActivity : AppCompatActivity() {
                                     Stop(binding.mapView.screenToLocation(screenPoint))
                                 )
                                 startRouteTask()
+                            }
+                            2 -> {
+                                showCalloutsForRoute(
+                                    routeGraphic,
+                                    binding.mapView.screenToLocation(screenPoint)
+                                )
                             }
                             else -> {
                                 routeStops.clear()
@@ -214,16 +225,38 @@ class MainActivity : AppCompatActivity() {
                     val routeSymbol = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 2f)
 
                     //add the route as a graphic to map
-                    graphicsOverlay.graphics.add(Graphic(route.routeGeometry, routeSymbol))
+                    routeGraphic = Graphic(route.routeGeometry, routeSymbol)
+                    graphicsOverlay.graphics.add(routeGraphic)
 
                     //change mapView visibility on the route
                     binding.mapView.setViewpointGeometryAsync(route.routeGeometry, 50.0)
+
+                    routeGraphic.attributes["totalTime"] = route.totalTime.toInt()
+                    routeGraphic.attributes["routeName"] = route.routeName
+                    routeGraphic.attributes["totalLength"] = route.totalLength.toInt()
+
+
                 }
             }
 
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+
+    }
+
+    private fun showCalloutsForRoute(routeGraphic: Graphic, tapLocation: Point) {
+
+        val calloutsTextView = layoutInflater.inflate(R.layout.callout, null) as TextView
+        var routeInfo = "Route Name = " + routeGraphic.attributes["routeName"].toString() + "\n"
+        routeInfo += "Total Time = " + routeGraphic.attributes["totalTime"].toString() + " minutes" + "\n"
+        routeInfo += "Total Length = " + routeGraphic.attributes["totalLength"].toString() + " meters"
+        calloutsTextView.text = routeInfo
+
+        val callouts = binding.mapView.callout
+        callouts.location = tapLocation
+        callouts.content = calloutsTextView
+        callouts.show()
 
     }
 
