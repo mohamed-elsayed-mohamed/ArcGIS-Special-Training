@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.alpha.arcgistraining.R
@@ -19,21 +18,31 @@ import com.esri.arcgisruntime.layers.ArcGISVectorTiledLayer
 import com.esri.arcgisruntime.loadable.LoadStatus
 import com.esri.arcgisruntime.mapping.ArcGISMap
 import com.esri.arcgisruntime.mapping.Basemap
-import com.esri.arcgisruntime.mapping.Viewpoint
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener
 import com.esri.arcgisruntime.mapping.view.Graphic
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay
 import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol
+import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
 import com.esri.arcgisruntime.tasks.networkanalysis.*
 import kotlin.math.roundToInt
 
+/*
+references:
+    find route:     https://developers.arcgis.com/android/kotlin/sample-code/find-route/
+    RouteTaskClass: https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteTask.html
+    RouteParametersClass: https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteParameters.html
+    RouteClass:     https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/Route.html
+    RouteResultClass:   https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteResult.html
 
+
+    offlineRouting using geodatabase: https://developers.arcgis.com/android/kotlin/sample-code/offline-routing/
+ */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var directionManeuvers: MutableList<DirectionManeuver>
 
-    private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
+    val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
 
     private val routeStops: ArrayList<Stop> = arrayListOf()
 
@@ -41,11 +50,12 @@ class MainActivity : AppCompatActivity() {
 
     private var routeGraphic = Graphic()
 
+    private var graphicRoutePoint = Graphic()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-//        ArcGISRuntimeEnvironment.setLicense(MapConstants.LICENSE_KEY)
         ArcGISRuntimeEnvironment.setApiKey(MapConstants.API_KEY)
 
         setupMap()
@@ -89,7 +99,7 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                             1 -> {
-                                setupSourceRoute(
+                                setupDestinationRoute(
                                     Stop(binding.mapView.screenToLocation(screenPoint))
                                 )
                                 startRouteTask()
@@ -99,9 +109,11 @@ class MainActivity : AppCompatActivity() {
                                     routeGraphic,
                                     binding.mapView.screenToLocation(screenPoint)
                                 )
+                                routeStops.add(Stop(binding.mapView.screenToLocation(screenPoint)))
                             }
                             else -> {
                                 routeStops.clear()
+                                binding.mapView.callout.dismiss()
                                 graphicsOverlay.graphics.clear()
                             }
                         }
@@ -232,13 +244,15 @@ class MainActivity : AppCompatActivity() {
                     //change mapView visibility on the route
                     binding.mapView.setViewpointGeometryAsync(route.routeGeometry, 50.0)
 
+                    //setup graphic of route attributes with data for later usage
                     routeGraphic.attributes["totalTime"] = route.totalTime.toInt()
                     routeGraphic.attributes["routeName"] = route.routeName
                     routeGraphic.attributes["totalLength"] = route.totalLength.toInt()
 
                     directionManeuvers = route.directionManeuvers
 
-                    getDirectionManeuversArray(directionManeuvers)
+                    //start showing bottom sheet containing maneuvers
+                    showDirectionManeuvers(directionManeuvers)
                 }
             }
 
@@ -248,26 +262,36 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun getDirectionManeuversArray(directionManeuvers: List<DirectionManeuver>): ArrayList<String> {
+    private fun showDirectionManeuvers(
+        directionManeuvers: List<DirectionManeuver>
+    ) {
+        //start the bottom sheet passing with it the direction maneuvers
+        val bottomSheetFragment = BottomSheet(directionManeuvers)
+        this.supportFragmentManager.beginTransaction()
+            .add(binding.flBottomSheet.id, bottomSheetFragment).commit()
+    }
 
-        val directionsArray = arrayListOf<String>()
-        var string = ""
 
-        binding.mapView.setViewpoint(Viewpoint(directionManeuvers.get(0).geometry.extent))
+    fun listViewItemClicks(i: Int) {
 
-        for (direction in directionManeuvers) {
-            directionsArray.add(direction.directionText)
-            string += direction.directionText + "\n"
+        //if graphic is in graphics overlays then remove it so no conflict between points of shown maneuvers directions
+        if (graphicsOverlay.graphics.contains(graphicRoutePoint)) {
+            graphicsOverlay.graphics.remove(graphicRoutePoint)
         }
+        //set a point for each maneuver when click on item is list view
+        val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 10f)
+        val simpleLineSymbol = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 2f)
+        simpleMarkerSymbol.outline = simpleLineSymbol
 
-        Log.d(TAG,string)
-
-        return directionsArray
+        //change viewpoint on this maneuver direction and add it to graphicsOverlays
+        binding.mapView.setViewpointGeometryAsync(directionManeuvers[i].geometry)
+        graphicRoutePoint = Graphic(directionManeuvers[i].geometry, simpleMarkerSymbol)
+        graphicsOverlay.graphics.add(graphicRoutePoint)
     }
 
 
     private fun showCalloutsForRoute(routeGraphic: Graphic, tapLocation: Point) {
-
+        //show the callouts containing details about route from graphic of route
         val calloutsTextView = layoutInflater.inflate(R.layout.callout, null) as TextView
         var routeInfo = "Route Name = " + routeGraphic.attributes["routeName"].toString() + "\n"
         routeInfo += "Total Time = " + routeGraphic.attributes["totalTime"].toString() + " minutes" + "\n"
@@ -299,4 +323,5 @@ class MainActivity : AppCompatActivity() {
         binding.mapView.dispose()
         super.onDestroy()
     }
+
 }
