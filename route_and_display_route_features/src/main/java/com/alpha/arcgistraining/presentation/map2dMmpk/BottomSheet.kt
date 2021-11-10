@@ -57,7 +57,7 @@ class BottomSheet(private var directionManeuvers: List<DirectionManeuver>) : Fra
         binding.rvBottomSheet.adapter = adapter
 
         binding.rvBottomSheet.setOnItemClickListener { _, _, i, _ ->
-            //on each item click cal function in main activity to change viewpoint and add graphic formaneuver
+            //on each item click cal function in main activity to change viewpoint and add graphic for maneuver
             (this.activity as MainActivity).listViewItemClicks(i)
         }
     }

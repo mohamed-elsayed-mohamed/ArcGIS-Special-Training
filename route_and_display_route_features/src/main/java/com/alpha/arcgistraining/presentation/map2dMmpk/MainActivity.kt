@@ -30,22 +30,26 @@ import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
 import com.esri.arcgisruntime.tasks.networkanalysis.*
 import kotlin.math.roundToInt
 
-/*
-references:
-    find route:     https://developers.arcgis.com/android/kotlin/sample-code/find-route/
-    RouteTaskClass: https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteTask.html
-    RouteParametersClass: https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteParameters.html
-    RouteClass:     https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/Route.html
-    RouteResultClass:   https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteResult.html
-
-
-    offlineRouting using geodatabase: https://developers.arcgis.com/android/kotlin/sample-code/offline-routing/
+/**
+ * 1-Route between 2 locations
+ * 2-display information of route(distance,time)(Callouts)
+ * 3-steps to from source to destination (directionManeuvers) shown on bottom sheet
+ * 4-clicking on bottom sheet items = directionManeuvers , then add point on each of them and speak
+ *
+ * References:-
+ * - [find route:]( https://developers.arcgis.com/android/kotlin/sample-code/find-route/)
+ * - [RouteTaskClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteTask.html)
+ * - [RouteParametersClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteParameters.html)
+ * - [RouteClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/Route.html)
+ * - [RouteResultClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/tasks/networkanalysis/RouteResult.html)
+ * - [ offlineRouting using geodatabase:]( https://developers.arcgis.com/android/kotlin/sample-code/offline-routing/)
+ * - [ offlineRouting using mmpk:]( https://developers.arcgis.com/android/java/sample-code/mobile-map-search-and-route/)
  */
+
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var directionManeuvers: MutableList<DirectionManeuver>
-
     val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
+
+    private lateinit var directionManeuvers: List<DirectionManeuver>
 
     private val routeStops: ArrayList<Stop> = arrayListOf()
 
@@ -303,7 +307,7 @@ class MainActivity : AppCompatActivity() {
 
     //when clicking on item in list view speak the direction Text
     private fun speak(directionText: String) {
-        if(this::textToSpeech.isInitialized) {
+        if (this::textToSpeech.isInitialized) {
             textToSpeech.speak(directionText, TextToSpeech.QUEUE_FLUSH, null, null)
         }
     }
