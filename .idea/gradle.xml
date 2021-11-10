@@ -13,6 +13,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/regionfeatureextraction" />
             <option value="$PROJECT_DIR$/route_and_display_route_features" />
+            <option value="$PROJECT_DIR$/search_for_address_show_nearby_features_for_specific_location" />
+            <option value="$PROJECT_DIR$/search_foraddress_show_nearby_features_for_specific_location" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
