@@ -13,23 +13,29 @@ import androidx.appcompat.app.AppCompatActivity
 import com.alpha.regionfeatureextraction.databinding.ActivityMainBinding
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
 import com.esri.arcgisruntime.concurrent.ListenableFuture
+import com.esri.arcgisruntime.geometry.*
+import com.esri.arcgisruntime.loadable.LoadStatus
 import com.esri.arcgisruntime.mapping.ArcGISMap
-import com.esri.arcgisruntime.mapping.view.Callout
-import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener
-import com.esri.arcgisruntime.mapping.view.IdentifyLayerResult
-import com.esri.arcgisruntime.mapping.view.MapView
+import com.esri.arcgisruntime.mapping.LayerList
+import com.esri.arcgisruntime.mapping.view.*
 import com.esri.arcgisruntime.portal.Portal
 import com.esri.arcgisruntime.portal.PortalItem
+import com.esri.arcgisruntime.symbology.SimpleFillSymbol
+import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
 import kotlin.math.roundToInt
 
 /**
  * 1- Extracting and display features from web map service.
- *
+ * 2- Show/Hide Layers
+ * 3- Calculate Area of Polygon
  *
  * References:-
  * - [Display a web map](https://developers.arcgis.com/android/maps-2d/tutorials/display-a-web-map/)
- * - https://developers.arcgis.com/android/kotlin/sample-code/feature-layer-selection/
- * - https://developers.arcgis.com/android/java/sample-code/feature-layer-show-attributes/
+ * - [Feature Selection](https://developers.arcgis.com/android/kotlin/sample-code/feature-layer-selection/)
+ * - [Show Attributes in Callout](https://developers.arcgis.com/android/java/sample-code/feature-layer-show-attributes/)
+ * - [Draw a Polygon](https://developers.arcgis.com/android/maps-2d/tutorials/add-a-point-line-and-polygon/#add-a-polygon-graphic)
+ * - [Format Coordinates](https://developers.arcgis.com/android/java/sample-code/format-coordinates/)
+ * - [Calculate Area](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/geometry/GeometryEngine.html#areaGeodetic(com.esri.arcgisruntime.geometry.Geometry,com.esri.arcgisruntime.geometry.AreaUnit,com.esri.arcgisruntime.geometry.GeodeticCurveType))
  */
 
 class MainActivity : AppCompatActivity() {
@@ -39,18 +45,69 @@ class MainActivity : AppCompatActivity() {
 
     private val callout: Callout by lazy { mapView.callout }
 
+    private val graphicsOverlay: GraphicsOverlay by lazy { GraphicsOverlay() }
+    private val pointCollection = PointCollection(SpatialReferences.getWgs84())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        binding.switchDraw.setOnCheckedChangeListener { _, isChecked ->
+            if(isChecked){
+                binding.fabDone.visibility = View.VISIBLE
+            } else {
+                binding.fabDone.visibility = View.INVISIBLE
+                pointCollection.clear()
+            }
+        }
+
+        binding.fabDone.setOnClickListener {
+            if(pointCollection.isNotEmpty() && pointCollection.size > 2){
+                val polygon = Polygon(pointCollection)
+                val simpleFill = SimpleFillSymbol(SimpleFillSymbol.Style.SOLID, Color.RED, null)
+                graphicsOverlay.graphics.clear()
+                graphicsOverlay.graphics.add(Graphic(polygon, simpleFill))
+
+                val area = GeometryEngine.areaGeodetic(polygon, AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC)
+                Toast.makeText(this, "Area: ${area.roundToInt()}", Toast.LENGTH_LONG).show()
+            }
+
+            pointCollection.clear()
+        }
+
         setupMap()
 
         handleTouchListener()
+    }
+
+    private fun displayBottomSheet() {
+        val layers: LayerList = mapView.map.operationalLayers
+        val bottomSheetLayers = BottomSheetLayers()
+        bottomSheetLayers.setLayers(layers)
+        bottomSheetLayers.show(supportFragmentManager, BottomSheetLayers.TAG)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun handleTouchListener() {
         mapView.onTouchListener = object : DefaultMapViewOnTouchListener(this, mapView){
             override fun onSingleTapConfirmed(motionEvent: MotionEvent): Boolean {
+
+                if(binding.switchDraw.isChecked){
+                    if(pointCollection.isEmpty())
+                        graphicsOverlay.graphics.clear()
+
+                    val point = Point(motionEvent.x.toInt(), motionEvent.y.toInt())
+                    val mapPoint = mapView.screenToLocation(point)
+                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 10f)
+                    graphicsOverlay.graphics.add(Graphic(mapPoint, simpleMarkerSymbol))
+
+                    val toLatitudeLongitude = CoordinateFormatter.toLatitudeLongitude(mapPoint, CoordinateFormatter.LatitudeLongitudeFormat.DECIMAL_DEGREES, 4)
+                    val latLang = CoordinateFormatter.fromLatitudeLongitude(toLatitudeLongitude, SpatialReferences.getWgs84())
+                    pointCollection.add(latLang.x, latLang.y)
+
+                    return true
+                }
+
                 val screenPoint = Point(motionEvent.x.roundToInt(), motionEvent.y.roundToInt())
 
                 val identifyLayerResultFuture: ListenableFuture<List<IdentifyLayerResult>> = mapView.identifyLayersAsync(screenPoint, 0.0, false)
@@ -82,7 +139,7 @@ class MainActivity : AppCompatActivity() {
         val calloutContent = getCalloutContent()
 
         for(attribute in attributes){
-            calloutContent.append("Key: ${attribute.key}, Value: ${attribute.value ?: "N/A"}")
+            calloutContent.append("${attribute.key}: ${attribute.value ?: "N/A"}\n")
         }
 
         val envelope = identifyLayerResult.elements[0].geometry.extent
@@ -100,16 +157,24 @@ class MainActivity : AppCompatActivity() {
             isVerticalScrollBarEnabled = true
             scrollBarStyle = View.SCROLLBARS_INSIDE_INSET
             movementMethod = ScrollingMovementMethod()
-            setLines(5)
+            setLines(7)
         }
     }
-
 
     private fun setupMap() {
         ArcGISRuntimeEnvironment.setApiKey(MapsConfigurations.API_KEY)
         val portal = Portal("https://www.arcgis.com", false)
         val portalItem = PortalItem(portal, "41281c51f9de45edaf1c8ed44bb10e30")
         mapView.map = ArcGISMap(portalItem)
+
+        mapView.map.addDoneLoadingListener {
+            if(mapView.map.loadStatus == LoadStatus.LOADED && mapView.map.operationalLayers.isNotEmpty()){
+//                mapView.map.operationalLayers.clear()
+                displayBottomSheet()
+            }
+
+            mapView.graphicsOverlays.add(graphicsOverlay)
+        }
     }
 
     override fun onPause() {

@@ -4,7 +4,10 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/Mohamed.Hasanen/AndroidStudioProjects/ArcGISSpecialTraining/app/src/main/res/layout/activity_main.xml" value="0.23007246376811594" />
-        <entry key="..\:/Users/Mohamed.Hasanen/AndroidStudioProjects/ArcGISSpecialTraining/regionfeatureextraction/src/main/res/layout/activity_main.xml" value="0.18297101449275363" />
+        <entry key="..\:/Users/Mohamed.Hasanen/AndroidStudioProjects/ArcGISSpecialTraining/regionfeatureextraction/src/main/res/drawable/bottom_sheet_rounded.xml" value="0.14635416666666667" />
+        <entry key="..\:/Users/Mohamed.Hasanen/AndroidStudioProjects/ArcGISSpecialTraining/regionfeatureextraction/src/main/res/layout/activity_main.xml" value="0.3" />
+        <entry key="..\:/Users/Mohamed.Hasanen/AndroidStudioProjects/ArcGISSpecialTraining/regionfeatureextraction/src/main/res/layout/item_layer.xml" value="0.22780797101449277" />
+        <entry key="..\:/Users/Mohamed.Hasanen/AndroidStudioProjects/ArcGISSpecialTraining/regionfeatureextraction/src/main/res/layout/layers_bottom_sheet.xml" value="0.22780797101449277" />
       </map>
     </option>
   </component>
