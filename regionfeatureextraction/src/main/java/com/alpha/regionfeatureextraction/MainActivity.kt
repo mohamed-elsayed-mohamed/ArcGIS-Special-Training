@@ -31,6 +31,8 @@ import kotlin.math.roundToInt
  *
  * 3- Calculate Area of Polygon
  *
+ * 4- Change Rendering Colors
+ *
  * References:-
  * - [Display a web map](https://developers.arcgis.com/android/maps-2d/tutorials/display-a-web-map/)
  * - [Feature Selection](https://developers.arcgis.com/android/kotlin/sample-code/feature-layer-selection/)
@@ -38,6 +40,7 @@ import kotlin.math.roundToInt
  * - [Draw a Polygon](https://developers.arcgis.com/android/maps-2d/tutorials/add-a-point-line-and-polygon/#add-a-polygon-graphic)
  * - [Format Coordinates](https://developers.arcgis.com/android/java/sample-code/format-coordinates/)
  * - [Calculate Area](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/geometry/GeometryEngine.html#areaGeodetic(com.esri.arcgisruntime.geometry.Geometry,com.esri.arcgisruntime.geometry.AreaUnit,com.esri.arcgisruntime.geometry.GeodeticCurveType))
+ * - [Simple Renderer](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/symbology/SimpleRenderer.html)
  */
 
 class MainActivity : AppCompatActivity() {
