@@ -42,7 +42,7 @@ import kotlin.math.roundToInt
  * 2-find address within all the map or at specific extent
  * 3-Query Feature layer so only features within extent of a location are shown
  *
- * References:-
+ * References:
  * - [Find address:]( https://developers.arcgis.com/android/kotlin/sample-code/find-address/)
  * - [Find address:]( https://developers.arcgis.com/android/java/sample-code/find-address/)
  * - [Feature Layer Query:]( https://developers.arcgis.com/android/java/sample-code/feature-layer-query/)
