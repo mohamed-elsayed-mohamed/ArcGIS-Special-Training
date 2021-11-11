@@ -39,6 +39,7 @@ import kotlin.math.roundToInt
  * - [Show Attributes in Callout](https://developers.arcgis.com/android/java/sample-code/feature-layer-show-attributes/)
  * - [Draw a Polygon](https://developers.arcgis.com/android/maps-2d/tutorials/add-a-point-line-and-polygon/#add-a-polygon-graphic)
  * - [Format Coordinates](https://developers.arcgis.com/android/java/sample-code/format-coordinates/)
+ * - [Coordinate Formatter](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/geometry/CoordinateFormatter.html)
  * - [Calculate Area](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/geometry/GeometryEngine.html#areaGeodetic(com.esri.arcgisruntime.geometry.Geometry,com.esri.arcgisruntime.geometry.AreaUnit,com.esri.arcgisruntime.geometry.GeodeticCurveType))
  * - [Simple Renderer](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/symbology/SimpleRenderer.html)
  */
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
                 graphicsOverlay.graphics.add(Graphic(polygon, simpleFill))
 
                 val area = GeometryEngine.areaGeodetic(polygon, AreaUnit(AreaUnitId.SQUARE_KILOMETERS), GeodeticCurveType.GEODESIC)
-                Toast.makeText(this, "Area: ${area.roundToInt()}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Area: ${area.roundToInt()} KM", Toast.LENGTH_LONG).show()
             }
 
             pointCollection.clear()
