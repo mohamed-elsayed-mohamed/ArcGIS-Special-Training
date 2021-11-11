@@ -13,4 +13,7 @@ object MapConstants {
 
     val NORTH_AMERICA_VIEW_POINT = Viewpoint(40.0, -100.0, 100000000.0)
 
+    const val SERVICE_FEATURE_TABLE_URL =
+        "https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Trailheads/FeatureServer/0"
+
 }

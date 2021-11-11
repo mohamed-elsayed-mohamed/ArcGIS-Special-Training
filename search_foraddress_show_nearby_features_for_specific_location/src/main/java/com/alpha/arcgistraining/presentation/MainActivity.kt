@@ -7,6 +7,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.provider.BaseColumns
 import android.view.MotionEvent
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.SearchView
 import android.widget.SimpleCursorAdapter
@@ -16,6 +17,9 @@ import com.alpha.arcgistraining.R
 import com.alpha.arcgistraining.databinding.ActivityMainBinding
 import com.alpha.arcgistraining.domain.constants.MapConstants
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
+import com.esri.arcgisruntime.data.ServiceFeatureTable
+import com.esri.arcgisruntime.geometry.Geometry
+import com.esri.arcgisruntime.layers.FeatureLayer
 import com.esri.arcgisruntime.loadable.LoadStatus
 import com.esri.arcgisruntime.mapping.ArcGISMap
 import com.esri.arcgisruntime.mapping.BasemapStyle
@@ -25,6 +29,7 @@ import com.esri.arcgisruntime.mapping.view.GraphicsOverlay
 import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.tasks.geocode.GeocodeResult
 import com.esri.arcgisruntime.tasks.geocode.LocatorTask
+import com.esri.arcgisruntime.tasks.geocode.SuggestParameters
 import kotlin.math.roundToInt
 
 /**
@@ -40,6 +45,9 @@ class MainActivity : AppCompatActivity() {
     private val graphicsOverlay: GraphicsOverlay = GraphicsOverlay()
 
     private lateinit var locatorTask: LocatorTask
+
+    private lateinit var featureLayerExtent: Geometry
+    private lateinit var geocodeResults: GeocodeResult
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +71,8 @@ class MainActivity : AppCompatActivity() {
 
                 gecodeSelectedAddress(query)
 
+                showFeaturesWithin(geocodeResults)
+
                 return true
             }
 
@@ -75,9 +85,24 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun showFeaturesWithin(geocodeResults: GeocodeResult) {
+
+
+
+    }
+
     private fun showSuggestions(newText: String) {
 
-        val suggestListenableFuture = locatorTask.suggestAsync(newText)
+        var specificExtentGeometry: Geometry? = null
+        val suggestedParameters = SuggestParameters()
+
+
+        if (binding.switchSearch.isChecked) {
+            specificExtentGeometry = binding.mapView.visibleArea.extent
+            suggestedParameters.searchArea = specificExtentGeometry.extent
+        }
+
+        val suggestListenableFuture = locatorTask.suggestAsync(newText, suggestedParameters)
 
         suggestListenableFuture.addDoneListener {
             if (suggestListenableFuture.isDone) {
@@ -132,6 +157,7 @@ class MainActivity : AppCompatActivity() {
                         val geocodeResult = geocodeListenableFuture.get()
 
                         if (geocodeResult.isNotEmpty()) {
+                            geocodeResults = geocodeResult[0]
                             addLabelOnSearchResult(geocodeResult[0])
                         }
 
@@ -183,11 +209,37 @@ class MainActivity : AppCompatActivity() {
         //create the map with base map ARCGIS_STREETS
         val map = ArcGISMap(BasemapStyle.ARCGIS_STREETS)
 
-        //set the mapView is our map to display it, with initial viewpoint as well as adding graphicOverlay on it
-        binding.mapView.map = map
-        binding.mapView.setViewpoint(MapConstants.NORTH_AMERICA_VIEW_POINT)
-        binding.mapView.graphicsOverlays.add(graphicsOverlay)
+        // create the service feature table
+        val serviceFeatureTable =
+            ServiceFeatureTable(MapConstants.SERVICE_FEATURE_TABLE_URL)
+        serviceFeatureTable.loadAsync()
 
+        serviceFeatureTable.addDoneLoadingListener {
+            if (serviceFeatureTable.loadStatus == LoadStatus.LOADED) {
+                // create the feature layer using the service feature table
+                val featureLayer = FeatureLayer(serviceFeatureTable)
+                featureLayer.loadAsync()
+                featureLayer.addDoneLoadingListener {
+                    if (featureLayer.loadStatus == LoadStatus.LOADED) {
+                        map.operationalLayers.add(featureLayer)
+
+                        featureLayerExtent = featureLayer.fullExtent
+
+                        //set the mapView is our map to display it, with initial viewpoint as well as adding graphicOverlay on it
+                        binding.mapView.map = map
+                        binding.mapView.setViewpointGeometryAsync(featureLayer.fullExtent, 10.0)
+                        binding.mapView.graphicsOverlays.add(graphicsOverlay)
+                    }
+                }
+            }
+        }
+
+    }
+
+    fun goToFeatureLayer(view: View) {
+        if (this::featureLayerExtent.isInitialized) {
+            binding.mapView.setViewpointGeometryAsync(featureLayerExtent, 10.0)
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
