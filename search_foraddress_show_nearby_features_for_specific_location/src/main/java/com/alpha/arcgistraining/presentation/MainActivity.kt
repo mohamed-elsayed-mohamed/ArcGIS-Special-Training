@@ -38,10 +38,18 @@ import kotlin.math.roundToInt
 
 
 /**
- * 1-find address
+ * 1-add feature layer using url
+ * 2-find address within all the map or at specific extent
+ * 3-Query Feature layer so only features within extent of a location are shown
  *
  * References:-
  * - [Find address:]( https://developers.arcgis.com/android/kotlin/sample-code/find-address/)
+ * - [Find address:]( https://developers.arcgis.com/android/java/sample-code/find-address/)
+ * - [Feature Layer Query:]( https://developers.arcgis.com/android/java/sample-code/feature-layer-query/)
+ * - [Query feature count and extent:]( https://developers.arcgis.com/net/android/sample-code/query-feature-count-and-extent/)
+ * - [FeatureLayerClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/layers/FeatureLayer.html#setFeaturesVisible(java.lang.Iterable,boolean))
+ * - [FeatureLayerClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/layers/FeatureLayer.html#setFeaturesVisible(java.lang.Iterable,boolean))
+ * - [Add feature layer by url:]( https://developers.arcgis.com/android/layers/tutorials/add-a-feature-layer/)
  */
 
 class MainActivity : AppCompatActivity() {
@@ -72,14 +80,12 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    //listener on search view,when selecting item from suggestions then start geocode to find address
+    //when writing text show suggestions of addresses
     private fun setListeners() {
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-
                 gecodeSelectedAddress(query)
-
-
-
                 return true
             }
 
@@ -94,6 +100,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showFeaturesWithin(geocodeResults: GeocodeResult) {
 
+        //set parameters to get al features from feature table,when the geometry used is the map initial one
+        //and spatialRelationship is intersecting -->means intersects features between geometry and feature layer
         val queryParams1 = QueryParameters()
         queryParams1.geometry = binding.mapView.map.initialViewpoint.targetGeometry
         queryParams1.isReturnGeometry = true
@@ -106,14 +114,17 @@ class MainActivity : AppCompatActivity() {
                 val results1 = queryListenable1.get() as FeatureQueryResult
 
                 val featuresList1 = ArrayList<Feature>()
-
+                //iterate result of query and set them in list
                 val resultIterator1 = results1.iterator()
                 while (resultIterator1.hasNext()) {
                     val feature = resultIterator1.next()
                     featuresList1.add(feature)
                 }
+                //change visibility of all features into false
                 featureLayer.setFeaturesVisible(featuresList1, false)
 
+
+                //get the features within the geometry of the location we searched for
                 val resultViewPoint = Viewpoint(geocodeResults.inputLocation, 10000.0)
                 binding.mapView.setViewpoint(resultViewPoint)
                 val resultViewPointGeometry =
@@ -131,12 +142,13 @@ class MainActivity : AppCompatActivity() {
                         val results = queryListenable.get() as FeatureQueryResult
 
                         val featuresList = ArrayList<Feature>()
-
+                        //iterate the query and set it in list = features within the geometry of search result
                         val resultIterator = results.iterator()
                         while (resultIterator.hasNext()) {
                             val feature = resultIterator.next()
                             featuresList.add(feature)
                         }
+                        // set visibility of features within  to true
                         featureLayer.setFeaturesVisible(featuresList, true)
                     }
                 }
@@ -150,18 +162,20 @@ class MainActivity : AppCompatActivity() {
         var specificExtentGeometry: Geometry? = null
         val suggestedParameters = SuggestParameters()
 
-
+        //when switch is checked then set suggestion parameters for our text only in the geometry we are in
         if (binding.switchSearch.isChecked) {
             specificExtentGeometry = binding.mapView.visibleArea.extent
             suggestedParameters.searchArea = specificExtentGeometry.extent
         }
 
+        //load suggestions using locator task with parameter the suggestion params
         val suggestListenableFuture = locatorTask.suggestAsync(newText, suggestedParameters)
 
         suggestListenableFuture.addDoneListener {
             if (suggestListenableFuture.isDone) {
                 val suggestions = suggestListenableFuture.get()
 
+                //create the adapter we want to show suggestion in
                 val cursor =
                     MatrixCursor(arrayOf(BaseColumns._ID, "address"))
 
@@ -170,7 +184,7 @@ class MainActivity : AppCompatActivity() {
                     arrayOf("address"),
                     intArrayOf(android.R.id.text1), 0
                 )
-
+                //get values of suggestions and set for adapter of our search view
                 for ((key, result) in suggestions.withIndex()) {
                     cursor.addRow(arrayOf(key, result.label))
                 }
@@ -186,6 +200,7 @@ class MainActivity : AppCompatActivity() {
                         return false
                     }
 
+                    //when clicking on suggestion take its value and set it up
                     override fun onSuggestionClick(p0: Int): Boolean {
 
                         binding.searchView.setQuery(suggestions[p0].label, true)
@@ -199,7 +214,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun gecodeSelectedAddress(query: String?) {
-
+        //using locator task load the result of geocoding the address we clicked
         locatorTask.addDoneLoadingListener {
 
             if (locatorTask.loadStatus == LoadStatus.LOADED) {
@@ -212,10 +227,11 @@ class MainActivity : AppCompatActivity() {
 
                         if (geocodeResult.isNotEmpty()) {
                             geocodeResults = geocodeResult[0]
+                            //add label for our geocoded result
                             addLabelOnSearchResult(geocodeResult[0])
-
+                            //set view point into our result
                             binding.mapView.setViewpointGeometryAsync(geocodeResults.inputLocation.extent)
-
+                            //start showing features near it
                             showFeaturesWithin(geocodeResults)
                         }
 
@@ -296,6 +312,7 @@ class MainActivity : AppCompatActivity() {
 
     fun goToFeatureLayer(view: View) {
         if (this::featureLayerExtent.isInitialized) {
+            //when clicking on extent button,reset features view and do to initial view point of feature layer
             binding.mapView.setViewpointGeometryAsync(featureLayerExtent, 10.0)
             featureLayer.resetFeaturesVisible()
         }
