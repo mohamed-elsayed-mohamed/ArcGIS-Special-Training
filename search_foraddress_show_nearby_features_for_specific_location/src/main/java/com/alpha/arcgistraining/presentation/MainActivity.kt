@@ -1,11 +1,14 @@
 package com.alpha.arcgistraining.presentation
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.MatrixCursor
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.provider.BaseColumns
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -13,6 +16,7 @@ import android.widget.SearchView
 import android.widget.SimpleCursorAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.alpha.arcgistraining.R
 import com.alpha.arcgistraining.databinding.ActivityMainBinding
 import com.alpha.arcgistraining.domain.constants.MapConstants
@@ -30,6 +34,7 @@ import com.esri.arcgisruntime.mapping.Viewpoint
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener
 import com.esri.arcgisruntime.mapping.view.Graphic
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay
+import com.esri.arcgisruntime.mapping.view.LocationDisplay
 import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.tasks.geocode.GeocodeResult
 import com.esri.arcgisruntime.tasks.geocode.LocatorTask
@@ -66,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var featureLayer: FeatureLayer
     private lateinit var featureTable: ServiceFeatureTable
 
+    private val locationDisplay: LocationDisplay by lazy { binding.mapView.locationDisplay }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +104,7 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         })
+
     }
 
     private fun showFeaturesWithin(geocodeResults: GeocodeResult) {
@@ -317,6 +324,56 @@ class MainActivity : AppCompatActivity() {
             //when clicking on extent button,reset features view and do to initial view point of feature layer
             binding.mapView.setViewpointGeometryAsync(featureLayerExtent, 10.0)
             featureLayer.resetFeaturesVisible()
+        }
+    }
+
+    fun goToCurrentLocation(view: View) {
+
+        if (!locationDisplay.isStarted) {
+            locationDisplay.startAsync()
+        } else {
+            locationDisplay.autoPanMode = LocationDisplay.AutoPanMode.COMPASS_NAVIGATION
+        }
+        locationDisplay.addDataSourceStatusChangedListener {
+            if (!it.isStarted && it.error != null) {
+                requestPermissions(it)
+            }
+        }
+    }
+
+    private fun requestPermissions(it: LocationDisplay.DataSourceStatusChangedEvent?) {
+
+        val requestCode = 2
+
+        val requestPermissions = arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        //checking permissions
+        val permissionCheckFineLocation =
+            ContextCompat.checkSelfPermission(this@MainActivity, requestPermissions[0]) ==
+                    PackageManager.PERMISSION_GRANTED
+        val permissionCheckCoarseLocation =
+            ContextCompat.checkSelfPermission(this@MainActivity, requestPermissions[1]) ==
+                    PackageManager.PERMISSION_GRANTED
+
+        if (!(permissionCheckFineLocation && permissionCheckCoarseLocation)) {
+            // if permissions are already granted, request permission
+            ActivityCompat.requestPermissions(this@MainActivity, requestPermissions, requestCode)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            //  if permissions granted start location display
+            locationDisplay.startAsync()
+        } else {
+            Log.d(TAG, "permission denied")
         }
     }
 

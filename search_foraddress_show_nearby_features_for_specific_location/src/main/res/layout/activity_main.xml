@@ -47,5 +47,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/searchView" />
 
+    <ImageButton
+        android:id="@+id/imgBtnCurrentLocation"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="@string/todo"
+        android:onClick="goToCurrentLocation"
+        android:src="@drawable/ic_baseline_my_location_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imgBtnInitialExtent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
