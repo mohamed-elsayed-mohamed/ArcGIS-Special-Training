@@ -257,9 +257,11 @@ class MainActivity : AppCompatActivity() {
                     binding.mapView.setViewpointGeometryAsync(route.routeGeometry, 50.0)
 
                     //setup graphic of route attributes with data for later usage
-                    routeGraphic.attributes["totalTime"] = route.totalTime.toInt()
-                    routeGraphic.attributes["routeName"] = route.routeName
-                    routeGraphic.attributes["totalLength"] = route.totalLength.toInt()
+                    routeGraphic.attributes[MapConstants.ROUTE_TOTAL_TIME_TEXT] =
+                        route.totalTime.toInt()
+                    routeGraphic.attributes[MapConstants.ROUTE_NAME_TIME_TEXT] = route.routeName
+                    routeGraphic.attributes[MapConstants.ROUTE_TOTAL_LENGTH_TEXT] =
+                        route.totalLength.toInt()
 
                     directionManeuvers = route.directionManeuvers
 
@@ -329,9 +331,10 @@ class MainActivity : AppCompatActivity() {
     private fun showCalloutsForRoute(routeGraphic: Graphic, tapLocation: Point) {
         //show the callouts containing details about route from graphic of route
         val calloutsTextView = layoutInflater.inflate(R.layout.callout, null) as TextView
-        var routeInfo = "Route Name = " + routeGraphic.attributes["routeName"].toString() + "\n"
-        routeInfo += "Total Time = " + routeGraphic.attributes["totalTime"].toString() + " minutes" + "\n"
-        routeInfo += "Total Length = " + routeGraphic.attributes["totalLength"].toString() + " meters"
+        var routeInfo =
+            "${getString(R.string.route_name)} = " + routeGraphic.attributes[MapConstants.ROUTE_NAME_TIME_TEXT].toString() + "\n"
+        routeInfo += "${getString(R.string.route_total_time)} = " + routeGraphic.attributes[MapConstants.ROUTE_TOTAL_TIME_TEXT].toString() + " minutes" + "\n"
+        routeInfo += "${getString(R.string.route_total_length)} = " + routeGraphic.attributes[MapConstants.ROUTE_TOTAL_LENGTH_TEXT].toString() + " meters"
         calloutsTextView.text = routeInfo
 
         val callouts = binding.mapView.callout

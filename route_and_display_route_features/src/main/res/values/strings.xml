@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">ArcGIS Special Training</string>
+    <string name="route_name">Route Name</string>
+    <string name="route_total_time">Route Total Time</string>
+    <string name="route_total_length">Route Total Length</string>
 </resources>

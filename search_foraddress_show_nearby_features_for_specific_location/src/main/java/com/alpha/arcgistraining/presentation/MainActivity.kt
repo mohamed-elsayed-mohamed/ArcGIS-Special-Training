@@ -50,6 +50,8 @@ import kotlin.math.roundToInt
  * - [FeatureLayerClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/layers/FeatureLayer.html#setFeaturesVisible(java.lang.Iterable,boolean))
  * - [FeatureLayerClass:]( https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/layers/FeatureLayer.html#setFeaturesVisible(java.lang.Iterable,boolean))
  * - [Add feature layer by url:]( https://developers.arcgis.com/android/layers/tutorials/add-a-feature-layer/)
+ * - [Query Features](https://developers.arcgis.com/android/query-and-edit/query/)
+ * - [QueryParametersClass](https://developers.arcgis.com/android/api-reference/reference/com/esri/arcgisruntime/data/QueryParameters.html)
  */
 
 class MainActivity : AppCompatActivity() {

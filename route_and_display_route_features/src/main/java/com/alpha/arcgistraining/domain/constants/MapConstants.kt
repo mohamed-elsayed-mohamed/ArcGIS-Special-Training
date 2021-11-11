@@ -16,4 +16,8 @@ object MapConstants {
 
     val SAN_DIEGO_VIEW_POINT = Viewpoint(32.7157, -117.1611, 200000.0)
 
+    const val ROUTE_TOTAL_TIME_TEXT = "totalTime"
+    const val ROUTE_NAME_TIME_TEXT = "routeName"
+    const val ROUTE_TOTAL_LENGTH_TEXT = "totalLength"
+
 }
