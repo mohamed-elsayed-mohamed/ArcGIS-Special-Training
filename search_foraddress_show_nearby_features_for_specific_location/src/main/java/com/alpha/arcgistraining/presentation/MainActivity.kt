@@ -17,12 +17,16 @@ import com.alpha.arcgistraining.R
 import com.alpha.arcgistraining.databinding.ActivityMainBinding
 import com.alpha.arcgistraining.domain.constants.MapConstants
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
+import com.esri.arcgisruntime.data.Feature
+import com.esri.arcgisruntime.data.FeatureQueryResult
+import com.esri.arcgisruntime.data.QueryParameters
 import com.esri.arcgisruntime.data.ServiceFeatureTable
 import com.esri.arcgisruntime.geometry.Geometry
 import com.esri.arcgisruntime.layers.FeatureLayer
 import com.esri.arcgisruntime.loadable.LoadStatus
 import com.esri.arcgisruntime.mapping.ArcGISMap
 import com.esri.arcgisruntime.mapping.BasemapStyle
+import com.esri.arcgisruntime.mapping.Viewpoint
 import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener
 import com.esri.arcgisruntime.mapping.view.Graphic
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay
@@ -31,6 +35,7 @@ import com.esri.arcgisruntime.tasks.geocode.GeocodeResult
 import com.esri.arcgisruntime.tasks.geocode.LocatorTask
 import com.esri.arcgisruntime.tasks.geocode.SuggestParameters
 import kotlin.math.roundToInt
+
 
 /**
  * 1-find address
@@ -48,6 +53,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var featureLayerExtent: Geometry
     private lateinit var geocodeResults: GeocodeResult
+    private lateinit var featureLayer: FeatureLayer
+    private lateinit var featureTable: ServiceFeatureTable
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
                 gecodeSelectedAddress(query)
 
-                showFeaturesWithin(geocodeResults)
+
 
                 return true
             }
@@ -87,9 +94,56 @@ class MainActivity : AppCompatActivity() {
 
     private fun showFeaturesWithin(geocodeResults: GeocodeResult) {
 
+        val queryParams1 = QueryParameters()
+        queryParams1.geometry = binding.mapView.map.initialViewpoint.targetGeometry
+        queryParams1.isReturnGeometry = true
+        queryParams1.spatialRelationship = QueryParameters.SpatialRelationship.INTERSECTS
 
+        val queryListenable1 = featureTable.queryFeaturesAsync(queryParams1)
 
+        queryListenable1.addDoneListener {
+            if (queryListenable1.isDone) {
+                val results1 = queryListenable1.get() as FeatureQueryResult
+
+                val featuresList1 = ArrayList<Feature>()
+
+                val resultIterator1 = results1.iterator()
+                while (resultIterator1.hasNext()) {
+                    val feature = resultIterator1.next()
+                    featuresList1.add(feature)
+                }
+                featureLayer.setFeaturesVisible(featuresList1, false)
+
+                val resultViewPoint = Viewpoint(geocodeResults.inputLocation, 10000.0)
+                binding.mapView.setViewpoint(resultViewPoint)
+                val resultViewPointGeometry =
+                    binding.mapView.getCurrentViewpoint(Viewpoint.Type.BOUNDING_GEOMETRY).targetGeometry
+
+                val queryParams = QueryParameters()
+                queryParams.geometry = resultViewPointGeometry
+                queryParams.isReturnGeometry = true
+                queryParams.spatialRelationship = QueryParameters.SpatialRelationship.INTERSECTS
+
+                val queryListenable = featureTable.queryFeaturesAsync(queryParams)
+
+                queryListenable.addDoneListener {
+                    if (queryListenable.isDone) {
+                        val results = queryListenable.get() as FeatureQueryResult
+
+                        val featuresList = ArrayList<Feature>()
+
+                        val resultIterator = results.iterator()
+                        while (resultIterator.hasNext()) {
+                            val feature = resultIterator.next()
+                            featuresList.add(feature)
+                        }
+                        featureLayer.setFeaturesVisible(featuresList, true)
+                    }
+                }
+            }
+        }
     }
+
 
     private fun showSuggestions(newText: String) {
 
@@ -159,6 +213,10 @@ class MainActivity : AppCompatActivity() {
                         if (geocodeResult.isNotEmpty()) {
                             geocodeResults = geocodeResult[0]
                             addLabelOnSearchResult(geocodeResult[0])
+
+                            binding.mapView.setViewpointGeometryAsync(geocodeResults.inputLocation.extent)
+
+                            showFeaturesWithin(geocodeResults)
                         }
 
                     }
@@ -210,14 +268,14 @@ class MainActivity : AppCompatActivity() {
         val map = ArcGISMap(BasemapStyle.ARCGIS_STREETS)
 
         // create the service feature table
-        val serviceFeatureTable =
+        featureTable =
             ServiceFeatureTable(MapConstants.SERVICE_FEATURE_TABLE_URL)
-        serviceFeatureTable.loadAsync()
+        featureTable.loadAsync()
 
-        serviceFeatureTable.addDoneLoadingListener {
-            if (serviceFeatureTable.loadStatus == LoadStatus.LOADED) {
+        featureTable.addDoneLoadingListener {
+            if (featureTable.loadStatus == LoadStatus.LOADED) {
                 // create the feature layer using the service feature table
-                val featureLayer = FeatureLayer(serviceFeatureTable)
+                featureLayer = FeatureLayer(featureTable)
                 featureLayer.loadAsync()
                 featureLayer.addDoneLoadingListener {
                     if (featureLayer.loadStatus == LoadStatus.LOADED) {
@@ -239,6 +297,7 @@ class MainActivity : AppCompatActivity() {
     fun goToFeatureLayer(view: View) {
         if (this::featureLayerExtent.isInitialized) {
             binding.mapView.setViewpointGeometryAsync(featureLayerExtent, 10.0)
+            featureLayer.resetFeaturesVisible()
         }
     }
 
@@ -252,8 +311,6 @@ class MainActivity : AppCompatActivity() {
                     e?.let {
                         val screenPoint =
                             android.graphics.Point(it.x.roundToInt(), it.y.roundToInt())
-
-
                     }
                     return true
                 }
@@ -265,11 +322,6 @@ class MainActivity : AppCompatActivity() {
 
         locatorTask.loadAsync()
 
-//        locatorTask.addDoneLoadingListener {
-//            if(locatorTask.loadStatus == LoadStatus.LOADED){
-//
-//            }
-//        }
     }
 
 
